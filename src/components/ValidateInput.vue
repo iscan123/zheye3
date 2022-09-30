@@ -6,7 +6,7 @@
       :class="{'is-invalid': inputRef.error}"
       :value="inputRef.val"
       @blur="validateInput"
-      @input: ="updateValue"
+      @input="updateValue"
       v-bind="$attrs"
     >
     <textarea
@@ -15,7 +15,7 @@
       :class="{'is-invalid': inputRef.error}"
       :value="inputRef.val"
       @blur="validateInput"
-      @input:="updateValue"
+      @input="updateValue"
       v-bind="$attrs"
     >
     </textarea>

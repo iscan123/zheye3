@@ -12,9 +12,8 @@
 <script lang="ts">
 import { defineComponent, onUnmounted } from 'vue'
 import mitt from 'mitt'
-import { anyTypeAnnotation } from '@babel/types'
 type ValidateFunc = () => boolean
-export const emitter:any = mitt()
+export const emitter = mitt()
 export default defineComponent({
   emits: ['form-submit'],
   setup(props, context) {
