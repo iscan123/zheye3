@@ -54,17 +54,19 @@ export default defineComponent({
     ]
     const onFormSubmit = (result: boolean) => {
       if (result) {
-        const { columnId } = store.state.user
-        if (columnId) {
+        const { _id} = store.state.user
+        if (_id) {
           const newPost: PostProps = {
-            id: new Date().getTime(),
+            //转成string类型
+            _id: new Date().getTime().toString(),
             title: titleVal.value,
             content: contentVal.value,
-            columnId,
+            //转成string类型
+            column:_id.toString(),
             createdAt: new Date().toLocaleString()
           }
           store.commit('createPost', newPost)
-          router.push({ name: 'column', params: { id: columnId } })
+          router.push({ name: 'column', params: { id:_id} })
         }
       }
     }

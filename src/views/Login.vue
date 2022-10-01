@@ -60,7 +60,7 @@ export default defineComponent({
           setTimeout(() => {
             router.push('/')
           }, 2000)
-        }).catch(e => {
+        }).catch(e=>{
           console.log(e)
         })
       }

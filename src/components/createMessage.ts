@@ -1,9 +1,9 @@
-import { createApp } from 'vue'
+import { createApp,h } from 'vue'
 import Message from './Message.vue'
 export type MessageType = 'success' | 'error' | 'default'
 
 const createMessage = (message: string, type: MessageType, timeout = 2000) => {
-  const messageInstance = createApp(Message, {
+  const messageVnode = h(Message, {
     message,
     type
   })
@@ -11,7 +11,8 @@ const createMessage = (message: string, type: MessageType, timeout = 2000) => {
   document.body.appendChild(mountNode)
   messageInstance.mount(mountNode)
   setTimeout(() => {
-    messageInstance.unmount(mountNode)
+    //本来里面写了个父节点 但是会报错
+    messageInstance.unmount()
     document.body.removeChild(mountNode)
   }, timeout)
 }
