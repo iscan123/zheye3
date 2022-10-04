@@ -38,7 +38,6 @@
         </div>
         <template #submit>
           <button type="submit" class="btn btn-primary btn-block btn-large"
-          @click="onFormSubmit"
           >注册新用户</button>
         </template>
       </validate-form>
