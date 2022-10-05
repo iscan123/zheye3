@@ -8,14 +8,14 @@
           <p>
             <a href="#" class="btn btn-primary my-2">开始写文章</a>
           </p>
-          <uploader action="/upload" :beforeUpload="beforeUpload" 
+          <!-- <uploader action="/upload" :beforeUpload="beforeUpload" 
           @file-uploaded-error="onFileUploadedError"
           @file-uploaded="onFileUploaded">
           <template #uploaded="dataProps">
             <img src="dataProps.uploadedData.data.url" width="500"/>
           </template>
         
-        </uploader>
+        </uploader> -->
         </div>
       </div>
     </section>
@@ -45,11 +45,10 @@ export default defineComponent({
     })
     const list = computed(() => store.state.columns)
     const beforeUpload=(file:File)=>{
-      const isJPG=true;
-      // const isJPG=file.type==='jpeg/png'
-      // if(!isJPG){
-      //  createMessage('上传图片只能是jpg格式','error')
-      // }
+      const isJPG=file.type==='image/jpeg'
+      if(!isJPG){
+       createMessage('上传图片只能是jpg格式','error')
+      }
       return isJPG
     }
     //返回到给你的数据都会有通用的格式 

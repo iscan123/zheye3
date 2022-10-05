@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import axios from 'axios'
 import Home from './views/Home.vue'
 import Login from './views/Login.vue'
 import Signup from './views/Signup.vue'
@@ -40,13 +41,39 @@ const router = createRouter({
   ]
 })
 router.beforeEach((to, from, next) => {
-  console.log(to.meta)
-  if (to.meta.requiredLogin && !store.state.user.isLogin) {
-    next({ name: 'login' })
-  } else if (to.meta.redirectAlreadyLogin && store.state.user.isLogin) {
-    next('/')
-  } else {
-    next()
+  const {user,token} = store.state
+  const {requiredLogin,redirectAlreadyLogin}=to.meta
+  if(!user.isLogin){
+    if(token){
+       //没有login 有token 我们就需要发请求
+       //并且要添加那个头部 
+       axios.defaults.headers.common.Authorization=`Bearer ${token}`
+       //添加默认头部之后开始发请求了
+       store.dispatch('fetchCurrentUser').then(()=>{
+        if(redirectAlreadyLogin){
+            next('/')
+        }else{
+            next()
+        }
+       }).catch(e=>{
+        console.log(e)
+        //它到这失败了说明token没有用了
+        store.commit('logout')
+        next('login')
+       })
+    }else{
+        if(requiredLogin){
+            next('login')
+        }else{
+            next()
+        }
+    }
+  }else{
+    if(redirectAlreadyLogin){
+        next('/')
+    }else{
+        next()
+    }
   }
 })
 
