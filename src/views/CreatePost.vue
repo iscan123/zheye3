@@ -5,6 +5,7 @@
       action="/upload"
       :beforeUpload="uploadCheck"
       @file-uploaded="handleFileUploaded"
+      :uploaded="uploadedData"
       class="d-flex align-items-center justify-content-center bg-light text-secondary w-100 my-4"
     >
       <h2>点击上传头图</h2>
@@ -17,7 +18,10 @@
         </div>
       </template>
       <template #uploaded="dataProps">
-        <img :src="dataProps.uploadedData.data.url">
+        <div class="uploaded-area">
+          <img :src="dataProps.uploadedData.data.url">
+          <h3>点击重新上传</h3>
+        </div>
       </template>
     </uploader>
     <validate-form @form-submit="onFormSubmit">
@@ -47,17 +51,15 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue'
+import { defineComponent, ref, onMounted } from 'vue'
 import { useStore } from 'vuex'
-import { useRouter } from 'vue-router'
-import axios from 'axios'
-import { GlobalDataProps, PostProps,ResponseType,ImageProps } from '../store'
+import { useRouter, useRoute } from 'vue-router'
+import { GlobalDataProps, PostProps, ResponseType, ImageProps } from '../store'
 import ValidateInput, { RulesProp } from '../components/ValidateInput.vue'
 import ValidateForm from '../components/ValidateForm.vue'
-import Uploader from '@/components/Uploader.vue'
-import {beforeUploadCheck} from '../helper'
-import createMessage from '@/components/createMessage'
-
+import Uploader from '../components/Uploader.vue'
+import createMessage from '../components/createMessage'
+import { beforeUploadCheck } from '../helper'
 export default defineComponent({
   name: 'Login',
   components: {
@@ -66,8 +68,11 @@ export default defineComponent({
     Uploader
   },
   setup() {
+    const uploadedData = ref()
     const titleVal = ref('')
     const router = useRouter()
+    const route = useRoute()
+    const isEditMode = !!route.query.id
     const store = useStore<GlobalDataProps>()
     let imageId = ''
     const titleRules: RulesProp = [
@@ -77,12 +82,22 @@ export default defineComponent({
     const contentRules: RulesProp = [
       { type: 'required', message: '文章详情不能为空' }
     ]
-    //需要一个回调
-    const handleFileUploaded=(rawData:ResponseType<ImageProps>)=>{
-     if(rawData.data._id){
-      //如果它的id存在 
-      imageId=rawData.data._id
-     }
+    onMounted(() => {
+      if (isEditMode) {
+        store.dispatch('fetchPost', route.query.id).then((rawData: ResponseType<PostProps>) => {
+          const currentPost = rawData.data
+          if (currentPost.image) {
+            uploadedData.value = { data: currentPost.image }
+          }
+          titleVal.value = currentPost.title
+          contentVal.value = currentPost.content || ''
+        })
+      }
+    })
+    const handleFileUploaded = (rawData: ResponseType<ImageProps>) => {
+      if (rawData.data._id) {
+        imageId = rawData.data._id
+      }
     }
     const onFormSubmit = (result: boolean) => {
       if (result) {
@@ -106,56 +121,53 @@ export default defineComponent({
         }
       }
     }
-    const handleFileChange = (e: Event) => {
-      const target = e.target as HTMLInputElement
-      const files = target.files
-      if (files) {
-        const uploadedFile = files[0]
-        const formData = new FormData()
-        formData.append(uploadedFile.name, uploadedFile)
-        axios.post('/upload', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }).then((resp: any) => {
-          console.log(resp)
-        })
+    const uploadCheck = (file: File) => {
+      const result = beforeUploadCheck(file, { format: ['image/jpeg', 'image/png'], size: 1 })
+      const { passed, error } = result
+      if (error === 'format') {
+        createMessage('上传图片只能是 JPG/PNG 格式!', 'error')
       }
-    }
-    const uploadCheck=(file:File)=>{
-      const result=beforeUploadCheck(file,{format:['image/jpeg','image/png'],size:1})
-      const {passed,error} = result
-      if(error==='format'){
-         createMessage('上传图片只能是JPG/PNG格式!','error')
-      };
-      if(error==='size'){
-         createMessage('上传图片大小不能超过1Mb!','error')
-      };
+      if (error === 'size') {
+        createMessage('上传图片大小不能超过 1Mb', 'error')
+      }
       return passed
-      
     }
     return {
-      uploadCheck,
       titleRules,
       titleVal,
       contentVal,
       contentRules,
       onFormSubmit,
-      handleFileChange,
-      handleFileUploaded
+      uploadCheck,
+      handleFileUploaded,
+      uploadedData
     }
   }
 })
 </script>
-
 <style>
-  .create-post-page .file-upload-container {
+.create-post-page .file-upload-container {
   height: 200px;
   cursor: pointer;
+  overflow: hidden;
 }
 .create-post-page .file-upload-container img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+.uploaded-area {
+  position: relative;
+}
+.uploaded-area:hover h3 {
+  display: block;
+}
+.uploaded-area h3 {
+  display: none;
+  position: absolute;
+  color: #999;
+  text-align: center;
+  width: 100%;
+  top: 50%;
 }
 </style>
