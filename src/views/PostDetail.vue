@@ -2,8 +2,7 @@
   <div class="post-detail-page">
     <modal title="删除文章" :visible="modalIsVisible"
     @modal-on-close="modalIsVisible=false"
-    @modal-on-confirm="modalIsVisible=false"
-    >
+    @modal-on-confirm="hideAndDelete">
       <p>确定是否删除文章</p>
     </modal>
     <article class="w-75 mx-auto mb-5 pb-3" v-if="currentPost">
@@ -34,10 +33,11 @@
 import { defineComponent, onMounted, computed ,ref} from 'vue'
 import MarkdownIt from 'markdown-it'
 import { useStore } from 'vuex'
-import { useRoute } from 'vue-router'
-import { GlobalDataProps, PostProps, ImageProps,UserProps } from '../store'
+import { useRoute, useRouter } from 'vue-router'
+import { GlobalDataProps, PostProps, ImageProps,UserProps,ResponseType } from '../store'
 import UserProfile from '../components/UserProfile.vue'
 import Modal from '../components/Modal.vue'
+import createMessage from '@/components/createMessage'
 
 export default defineComponent({
   name: 'post-detail',
@@ -48,6 +48,7 @@ export default defineComponent({
   setup() {
     const store = useStore<GlobalDataProps>()
     const route = useRoute()
+    const router=useRouter()
     const currentId = route.params.id
     const md = new MarkdownIt()
     const modalIsVisible=ref(false)
@@ -80,12 +81,26 @@ export default defineComponent({
         return null
       }
     })
+    const hideAndDelete=()=>{
+      modalIsVisible.value=false;
+      store.dispatch('deletePost',currentId).then((rawData:ResponseType<PostProps>)=>{
+        //假如删除成功 
+        createMessage('删除成功 两秒后跳转到专栏首页','success',2000)
+        //两秒后跳转
+        setTimeout(()=>{
+          router.push({name:'column',params:{
+            id:rawData.data.column
+          }})
+        })
+      })
+    }
     return {
       currentPost,
       currentImageUrl,
       currentHTML,
       showEditArea,
-      modalIsVisible
+      modalIsVisible,
+      hideAndDelete
     }
   }
 })
