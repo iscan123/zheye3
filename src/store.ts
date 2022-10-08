@@ -65,8 +65,8 @@ const store = createStore<GlobalDataProps>({
     loading: false,
     columns: [],
     posts: [],
-    // 先改成这样吧 我登录不上去
-    user: { isLogin: true,nickName:'ann' }
+    // 设置为true 无法登录
+    user: { isLogin:false}
   },
   mutations: {
     // login(state) {
@@ -150,4 +150,3 @@ const store = createStore<GlobalDataProps>({
 })
 
 export default store
-
