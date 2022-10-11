@@ -12,14 +12,14 @@
       <template #loading>
         <div class="d-flex">
           <div class="spinner-border text-secondary" role="status">
-            <span class="sr-only">Loading...</span>
+            <span class="visually-hidden">Loading...</span>
           </div>
           <h2>正在上传</h2>
         </div>
       </template>
       <template #uploaded="dataProps">
         <div class="uploaded-area">
-          <img :src="dataProps.uploadedData.data.url">
+          <img :src="dataProps.uploadedData && dataProps.uploadedData.data.url">
           <h3>点击重新上传</h3>
         </div>
       </template>
@@ -27,7 +27,6 @@
     <validate-form @form-submit="onFormSubmit">
       <div class="mb-3">
         <label class="form-label">文章标题：</label>
-        <textarea ref="textArea"></textarea>
         <validate-input
           :rules="titleRules" v-model="titleVal"
           placeholder="请输入文章标题"
@@ -36,13 +35,14 @@
       </div>
       <div class="mb-3">
         <label class="form-label">文章详情：</label>
-        <validate-input
-          rows="10"
-          tag="textarea"
-          placeholder="请输入文章详情"
-          :rules="contentRules"
+        <editor
           v-model="contentVal"
-        />
+          :options="editorOptions"
+          @blur="checkEditor"
+          :class="{'is-invalid': !editorStatus.isValid}"
+        >
+        </editor>
+        <span v-if="!editorStatus.isValid" class="invalid-feedback mt-1">{{editorStatus.message}}</span>
       </div>
       <template #submit>
         <button class="btn btn-primary btn-large">{{isEditMode ? '更新文章' : '发表文章'}}
@@ -53,19 +53,19 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted } from 'vue'
+import { defineComponent, ref, onMounted, reactive } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter, useRoute } from 'vue-router'
+import { Options } from 'easymde'
 import { GlobalDataProps, PostProps, ResponseType, ImageProps } from '../store'
 import ValidateInput, { RulesProp } from '../components/ValidateInput.vue'
 import ValidateForm from '../components/ValidateForm.vue'
 import Uploader from '../components/Uploader.vue'
+import Editor from '../components/Editor.vue'
 import createMessage from '../components/createMessage'
 import { beforeUploadCheck } from '../helper'
-import EasyMDE from 'easymde'
-import Editor from '../components/Editor.vue'
 export default defineComponent({
-  name: 'Login',
+  name: 'CreatePost',
   components: {
     ValidateInput,
     ValidateForm,
@@ -75,12 +75,19 @@ export default defineComponent({
   setup() {
     const uploadedData = ref()
     const titleVal = ref('')
+    const editorStatus = reactive({
+      isValid: true,
+      message: ''
+    })
     const router = useRouter()
     const route = useRoute()
     const isEditMode = !!route.query.id
-    const textArea=ref<null|HTMLTextAreaElement>(null)
     const store = useStore<GlobalDataProps>()
+    const textArea = ref<null | HTMLTextAreaElement>(null)
     let imageId = ''
+    const editorOptions: Options = {
+      spellChecker: false
+    }
     const titleRules: RulesProp = [
       { type: 'required', message: '文章标题不能为空' }
     ]
@@ -88,10 +95,16 @@ export default defineComponent({
     const contentRules: RulesProp = [
       { type: 'required', message: '文章详情不能为空' }
     ]
-    onMounted(() => {
-      if(textArea.value){
-        const eazyMDEInstance=new EasyMDE({element:textArea.value})
+    const checkEditor = () => {
+      if (contentVal.value.trim() === '') {
+        editorStatus.isValid = false
+        editorStatus.message = '文章详情不能为空'
+      } else {
+        editorStatus.isValid = true
+        editorStatus.message = ''
       }
+    }
+    onMounted(() => {
       if (isEditMode) {
         store.dispatch('fetchPost', route.query.id).then((rawData: ResponseType<PostProps>) => {
           const currentPost = rawData.data
@@ -109,7 +122,8 @@ export default defineComponent({
       }
     }
     const onFormSubmit = (result: boolean) => {
-      if (result) {
+      checkEditor()
+      if (result && editorStatus.isValid) {
         const { column, _id } = store.state.user
         if (column) {
           const newPost: PostProps = {
@@ -122,10 +136,12 @@ export default defineComponent({
             newPost.image = imageId
           }
           const actionName = isEditMode ? 'updatePost' : 'createPost'
-          const sendData = isEditMode ? {
-            id: route.query.id,
-            payload: newPost
-          } : newPost
+          const sendData = isEditMode
+            ? {
+                id: route.query.id,
+                payload: newPost
+              }
+            : newPost
           store.dispatch(actionName, sendData).then(() => {
             createMessage('发表成功，2秒后跳转到文章', 'success', 2000)
             setTimeout(() => {
@@ -154,9 +170,12 @@ export default defineComponent({
       onFormSubmit,
       uploadCheck,
       handleFileUploaded,
-      uploadedData,
       isEditMode,
-      textArea
+      uploadedData,
+      textArea,
+      editorOptions,
+      checkEditor,
+      editorStatus
     }
   }
 })
@@ -187,3 +206,4 @@ export default defineComponent({
   top: 50%;
 }
 </style>
+
