@@ -4,6 +4,7 @@ import router from './router'
 import store from './store'
 
 import App from './App.vue'
+import 'easymde/dist/aesymde.min.css'
 
 //要写这个 不然拿不到token
 // 替换 baseURL

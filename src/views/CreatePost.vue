@@ -27,6 +27,7 @@
     <validate-form @form-submit="onFormSubmit">
       <div class="mb-3">
         <label class="form-label">文章标题：</label>
+        <textarea ref="textArea"></textarea>
         <validate-input
           :rules="titleRules" v-model="titleVal"
           placeholder="请输入文章标题"
@@ -61,12 +62,15 @@ import ValidateForm from '../components/ValidateForm.vue'
 import Uploader from '../components/Uploader.vue'
 import createMessage from '../components/createMessage'
 import { beforeUploadCheck } from '../helper'
+import EasyMDE from 'easymde'
+import Editor from '../components/Editor.vue'
 export default defineComponent({
   name: 'Login',
   components: {
     ValidateInput,
     ValidateForm,
-    Uploader
+    Uploader,
+    Editor
   },
   setup() {
     const uploadedData = ref()
@@ -74,6 +78,7 @@ export default defineComponent({
     const router = useRouter()
     const route = useRoute()
     const isEditMode = !!route.query.id
+    const textArea=ref<null|HTMLTextAreaElement>(null)
     const store = useStore<GlobalDataProps>()
     let imageId = ''
     const titleRules: RulesProp = [
@@ -84,6 +89,9 @@ export default defineComponent({
       { type: 'required', message: '文章详情不能为空' }
     ]
     onMounted(() => {
+      if(textArea.value){
+        const eazyMDEInstance=new EasyMDE({element:textArea.value})
+      }
       if (isEditMode) {
         store.dispatch('fetchPost', route.query.id).then((rawData: ResponseType<PostProps>) => {
           const currentPost = rawData.data
@@ -147,7 +155,8 @@ export default defineComponent({
       uploadCheck,
       handleFileUploaded,
       uploadedData,
-      isEditMode
+      isEditMode,
+      textArea
     }
   }
 })
